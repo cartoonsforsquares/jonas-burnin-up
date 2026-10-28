@@ -1,0 +1,11 @@
+# Working files kept on the computer but not published with the game
+old/
+reference/
+assets/joe-1.webp
+assets/joe-2.webp
+assets/joe-3.webp
+assets/joe-4.webp
+assets/psst.wav
+assets/ui/score-paper.webp
+fonts/KCAnvaHell.woff2
+.DS_Store

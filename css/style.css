@@ -1,0 +1,31 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Ms.Williams Shadow is a color font, so it is loaded here instead of with p5's loadFont() */
+@font-face {
+    font-family: 'MsWilliamsShadow';
+    src: url('../fonts/MsWilliamsShadow-Regular.woff2') format('woff2');
+    font-display: block;
+}
+
+/* KC Bubble Shack: the Burnin' Up headline font (trimmed to the characters the game uses) */
+@font-face {
+    font-family: 'KCBubbleShack';
+    src: url('../fonts/KCBubbleShack.woff2') format('woff2');
+    font-display: block;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: #C8152D; /* Burnin' Up red */
+}
+
+canvas {
+    display: block;
+}
