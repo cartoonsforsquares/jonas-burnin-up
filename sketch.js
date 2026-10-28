@@ -93,8 +93,8 @@ const HEADLINE_STYLE = {
   panelText: '#281F1C' //dark help text on the torn paper (panelImage is loaded in preload)
 };
 
-//Shown under "Tap to play", so new players know what to do
-const START_HINT = ["Grab whoever is sinking", "Drop him on something floating"];
+//No instructions under "Tap to play": players figure it out
+const START_HINT = [];
 //Shown under "Retry?"
 function RETRY_HINT() { return [`You saved them ${score} ${score === 1 ? 'time' : 'times'}`]; }
 //"Tap to play" and "Retry" sit in the middle of the screen (the game is paused, so covering the band is fine).
@@ -418,7 +418,8 @@ function currentFrame(b) {
 }
 
 // ---------- The pinching hand ----------
-//It works like a claw machine: follow the finger, tap to reach down and pinch, tap to let go.
+//Press, drag, release: press anywhere and the hand jumps to your finger and reaches down to pinch,
+//drag to carry him, and let go to drop him. Works the same with a finger or a mouse.
 
 function updateHand() {
   const s = speedScale();
@@ -452,24 +453,42 @@ function updateHand() {
     }
   } else if (hand.state === 'up') {
     hand.y -= 10 * s;
-    if (hand.y <= restY) { hand.y = restY; hand.state = 'top'; }
+    //It carries him sideways with the finger on the way up, too
+    hand.x = constrain(mouseX, playLeft() + handEdge(), playLeft() + playWidth() - handEdge());
+    if (hand.y <= restY) {
+      hand.y = restY; hand.state = 'top';
+      //Let go early (before the hand got back up)? Drop him as soon as it is up.
+      if (hand.holding && !pointerDown) dropHeld();
+    }
   }
 }
 
 function headY(b) { return b.feetY - figureHeight() * b.scale; }
 
-//One tap does the next thing: reach down, or let go of whoever it is holding
-function handAction() {
-  if (hand.state !== 'top') return;
-  if (hand.holding) {
-    const b = hand.holding;
-    b.state = 'falling';
-    b.vy = 0;
-    hand.holding = null;
-    hand.swing = 0;
-  } else {
-    hand.state = 'down';
-  }
+let pointerDown = false; //is a finger (or the mouse button) currently down?
+
+//Press: the hand jumps straight to the finger and reaches down to pinch whoever is below
+function pressHand() {
+  pointerDown = true;
+  if (hand.state !== 'top' || hand.holding) return;
+  hand.x = constrain(mouseX, playLeft() + handEdge(), playLeft() + playWidth() - handEdge());
+  hand.state = 'down';
+}
+
+//Release: let go of whoever the hand is holding, right where the finger is
+function releaseHand() {
+  pointerDown = false;
+  if (hand.holding && hand.state === 'top') dropHeld();
+}
+
+function dropHeld() {
+  const b = hand.holding;
+  hand.x = constrain(mouseX, playLeft() + handEdge(), playLeft() + playWidth() - handEdge());
+  b.x = hand.x;
+  b.state = 'falling';
+  b.vy = 0;
+  hand.holding = null;
+  hand.swing = 0;
 }
 
 // ---------- Drawing the band ----------
@@ -625,16 +644,29 @@ function drawHand() {
 
 // ---------- Input and restarting ----------
 
+let ignoreThisPress = false; //the tap that starts or restarts the game should not also grab
+
 function mousePressed() {
-  if (handleStartTap(resetGame)) return;
-  if (gameOver) resetGame();
-  else handAction();
+  if (handleStartTap(resetGame)) { ignoreThisPress = true; return; }
+  if (gameOver) { resetGame(); ignoreThisPress = true; return; }
+  pressHand();
+}
+
+function mouseReleased() {
+  if (ignoreThisPress) { ignoreThisPress = false; pointerDown = false; return; }
+  releaseHand();
 }
 
 function touchStarted() {
   //p5 does not run mousePressed once touchStarted exists, so taps are handled here too
   mousePressed();
   //Block the default touch behaviour so the page does not scroll or refresh
+  return false;
+}
+
+function touchEnded() {
+  //Same for lifting the finger
+  mouseReleased();
   return false;
 }
 
