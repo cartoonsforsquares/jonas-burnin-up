@@ -97,12 +97,11 @@ const HEADLINE_STYLE = {
 const START_HINT = ["Grab whoever is sinking", "Drop him on something floating"];
 //Shown under "Retry?"
 function RETRY_HINT() { return [`You saved them ${score} ${score === 1 ? 'time' : 'times'}`]; }
-//Start and game-over prompts sit low on the pizza; the speed-up banner sits up in the red,
-//so it never covers the action
+//"Tap to play" and "Retry" sit in the middle of the screen (the game is paused, so covering the band is fine).
+//The speed-up banner sits up in the red during play, so it never covers the action.
 function PROMPT_Y() {
   if (started && !gameOver) return (hudLayout().headBottom + groundY(0) - figureHeight() * 0.8) / 2;
-  //Low on the pizza, but always kept clear of the score paper below it
-  return min((groundY(0.5) + scoreBarTop()) / 2, scoreBarTop() - hudLayout().ts * 3.1);
+  return height / 2;
 }
 document.fonts.load('40px KCBubbleShack');
 

@@ -137,7 +137,7 @@ let started = false;
 
 function drawStartScreen() {
   //A game can add a few short lines explaining how to play, as START_HINT in its sketch.js
-  drawPrompt(isMobile ? "Tap to play" : "Click to play", 1.7, typeof START_HINT !== 'undefined' ? START_HINT : []);
+  drawPrompt(isMobile ? "Tap to play" : "Click to play", 1.7, typeof START_HINT !== 'undefined' ? START_HINT : [], true);
 }
 
 //Where "Tap to play", "Retry?", and the speed-up banner go. A game can set PROMPT_Y() in its sketch.js.
@@ -147,7 +147,8 @@ function promptY() {
 
 //A big headline-style prompt with optional small lines under it, centered on promptY().
 //If the game's HEADLINE_STYLE has a panel color, a rounded panel sits behind it so it reads on busy backgrounds.
-function drawPrompt(words, sizeInLines, lines) {
+//fixed: use the same panel size every time (so "Tap to play" and "Retry" match), with room for two lines.
+function drawPrompt(words, sizeInLines, lines, fixed) {
   const hud = hudLayout();
   const room = width - hud.edge * 2;
   const w = styledWidth(words, hud.ts * sizeInLines);
@@ -157,12 +158,15 @@ function drawPrompt(words, sizeInLines, lines) {
   const longest = max(0, ...lines.map(l => textWidth(l.toUpperCase())));
   const small = longest > room - hud.ts * 1.6 ? hud.scoreSize * 0.85 * (room - hud.ts * 1.6) / longest : hud.scoreSize * 0.85;
   const lineGap = small * 1.45;
-  const blockH = size * 1.05 + lines.length * lineGap;
+  const textH = size * 1.05 + lines.length * lineGap;
+  const blockH = fixed ? size * 1.05 + 2 * lineGap : textH;
   const top = promptY() - blockH / 2;
+  const textTop = top + (blockH - textH) / 2; //text sits in the middle of the panel
   push();
   const st = headlineStyle();
   if (st && (st.panel || st.panelImage)) {
-    const pw = min(width - hud.edge, max(styledWidth(words, size), ...lines.map(l => { textFont(scoreFont); textSize(small); return textWidth(l.toUpperCase()); })) + hud.ts * 1.6);
+    const pw = fixed ? min(width - hud.edge, hud.ts * 11.5)
+                     : min(width - hud.edge, max(styledWidth(words, size), ...lines.map(l => { textFont(scoreFont); textSize(small); return textWidth(l.toUpperCase()); })) + hud.ts * 1.6);
     if (st.panelImage) {
       //A picture (like torn paper) stretched a little past the text on every side
       imageMode(CORNER);
@@ -173,10 +177,10 @@ function drawPrompt(words, sizeInLines, lines) {
     }
   }
   textAlign(CENTER, TOP);
-  styledText(words, width / 2, top, size);
+  styledText(words, width / 2, textTop, size);
   textFont(scoreFont); textSize(small); noStroke();
   fill(st && st.panelImage && st.panelText ? st.panelText : st && st.scoreFill ? st.scoreFill : FONT_SHADOW);
-  lines.forEach((line, i) => text(line.toUpperCase(), width / 2, top + size * 1.05 + i * lineGap + small * 0.2));
+  lines.forEach((line, i) => text(line.toUpperCase(), width / 2, textTop + size * 1.05 + i * lineGap + small * 0.2));
   pop();
 }
 
@@ -259,7 +263,7 @@ function drawSoundCheck() {
 //Shown once the player has missed too many. Click or tap anywhere to retry.
 function drawRetryScreen() {
   //A game can add lines under "Retry?" (like the final score) with RETRY_HINT() in its sketch.js
-  drawPrompt("Retry?", 1.7, typeof RETRY_HINT === 'function' ? RETRY_HINT() : []);
+  drawPrompt("Retry?", 1.7, typeof RETRY_HINT === 'function' ? RETRY_HINT() : [], true);
 }
 
 //Level 0 for the first LEVEL_EVERY points, level 1 for the next, and so on
