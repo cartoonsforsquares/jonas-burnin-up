@@ -416,17 +416,17 @@ function currentFrame(b) {
 }
 
 // ---------- The pinching hand ----------
-//It behaves like a claw machine: follow the finger, tap to reach down and pinch, tap to let go.
+//It works like a claw machine: follow the finger, tap to reach down and pinch, tap to let go.
 
 function updateHand() {
   const s = speedScale();
   const restY = handRestY();
 
   if (hand.state === 'top') {
-    //The hand follows the finger or mouse, with a little lag like a real claw machine
+    //The hand follows the finger or mouse directly, with no lag
     //(kept away from the edges so whoever it holds stays on screen)
     const before = hand.x;
-    hand.x += (constrain(mouseX, playLeft() + handEdge(), playLeft() + playWidth() - handEdge()) - hand.x) * 0.12;
+    hand.x = constrain(mouseX, playLeft() + handEdge(), playLeft() + playWidth() - handEdge());
     hand.y = restY;
     //Whoever it holds swings a little when it moves
     hand.swing += ((before - hand.x) * 0.03 - hand.swing) * 0.1;
