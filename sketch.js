@@ -355,13 +355,15 @@ function updateBrothers(dt) {
       const before = b.feetY;
       b.vy += 0.7 * s;
       b.feetY += b.vy;
-      //Land on an empty object he passes on the way down. One brother per object, and he falls
-      //past a nearly melted one if there is a safe one further below him (the one you aimed for).
-      const under = o => abs(b.x - o.x) < objWidth(o) / 2 + figureHeight() * 0.2 &&
+      //Land on the object you aimed for. He has to be over it (one brother per object), and he falls
+      //past other objects on the way down if one further below is closer to where the hand let go,
+      //or if this one is nearly melted and there is a safe one below.
+      const under = o => o.state === 'floating' && abs(b.x - o.x) < objWidth(o) * 0.5 &&
                          !brothers.some(other => other.on === o && other.state === 'standing');
-      const safeBelow = objects.some(o => under(o) && o.state === 'floating' && o.melt < DANGER && objStand(o) > b.feetY);
-      const landing = objects.find(o => under(o) && o.state === 'floating' && before <= objStand(o) + 2 && b.feetY >= objStand(o) &&
-                                        !(o.melt >= DANGER && safeBelow));
+      const below = objects.filter(o => under(o) && objStand(o) > b.feetY);
+      const landing = objects.find(o => under(o) && before <= objStand(o) + 2 && b.feetY >= objStand(o) &&
+        !below.some(p => p !== o && abs(p.x - b.x) < abs(o.x - b.x)) &&                 //a better-aimed one below
+        !(o.melt >= DANGER && below.some(p => p !== o && p.melt < DANGER)));              //a safer one below
       if (landing) {
         b.state = 'standing';
         b.on = landing;
@@ -432,10 +434,12 @@ function updateHand() {
     hand.swing += ((before - hand.x) * 0.03 - hand.swing) * 0.1;
   } else if (hand.state === 'down') {
     hand.y += 14 * s;
-    //Pinch the first brother whose head the hand reaches (sinking ones too, while the head is still out)
-    const target = brothers.find(b => (b.state === 'standing' || (b.state === 'sinking' && headY(b) < groundY(b.depth))) &&
-                                      abs(b.x - hand.x) < figureHeight() * b.scale * 0.4 &&
-                                      hand.y >= headY(b) - 4);
+    //Pinch the first brother whose head the hand reaches (sinking ones too, while the head is still out).
+    //If someone in trouble is further down in the same spot, the hand reaches past anyone who is fine.
+    const grabbable = b => (b.state === 'standing' || (b.state === 'sinking' && headY(b) < groundY(b.depth))) &&
+                           abs(b.x - hand.x) < figureHeight() * b.scale * 0.4;
+    const troubleBelow = brothers.some(b => grabbable(b) && inTrouble(b) && headY(b) > hand.y);
+    const target = brothers.find(b => grabbable(b) && hand.y >= headY(b) - 4 && (inTrouble(b) || !troubleBelow));
     if (target) {
       //Only a real rescue counts as a save later: he has to be in trouble when picked up
       target.rescue = inTrouble(target);
